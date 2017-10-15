@@ -57,10 +57,10 @@ module.exports = function (RED) {
                         msg.later.count += 1;
                         node.send(msg);
                     }, sched);
-                    debug('Started timer for schedule : ' + msg.later.id);
+                    node.debug('Started timer for schedule : ' + msg.later.id);
                 } else {
                     //This schedule has finished, remove any references to previous timers
-                    debug('Schedule has ended : ' + msg.later.id);
+                    node.debug('Schedule has ended : ' + msg.later.id);
                     delete runningSchedules[msg.later.id];
                 }
             },
@@ -88,7 +88,7 @@ module.exports = function (RED) {
             //If this message has no (or null) payload, stop any running timers
             //remove this schedule from the list, and do no further processing
             if (!msg.payload && runningSchedules[msg.later.id]) {
-                debug("Removing scheduled timer : " + msg.later.id);
+                node.debug("Removing scheduled timer : " + msg.later.id);
                 runningSchedules[msg.later.id].clear();
                 delete runningSchedules[msg.later.id];
                 return;
@@ -108,24 +108,24 @@ module.exports = function (RED) {
                     runSched(msg, thisSched);
                 }
             } else {
-                debug("No valid schedule, sending msg through.");
+                node.debug("No valid schedule, sending msg through.");
                 node.send(msg);
             }
         });
         //Listener for the close event, clear timers, tidy up
         node.on('close', function (done) {
             var id;
-            debug("Close called, emptying running timers.");
+            node.debug("Close called, emptying running timers.");
             for (id in runningSchedules) {
                 if (runningSchedules.hasOwnProperty(id)) {
-                    debug("Removing timer : " + id);
+                    node.debug("Removing timer : " + id);
                     runningSchedules[id].clear();
                 }
             }
             runningSchedules = {};
             done();
         });
-        debug("New node created : %s", (node.name.length > 0) ? node.name : 'Later');
+        node.debug("New node created : %s", (node.name.length > 0) ? node.name : 'Later');
     }
 
     //Set later to use the local time rather than UTC
@@ -141,21 +141,21 @@ module.exports = function (RED) {
             laterDir = path.dirname(require.resolve('later'));
         }
         catch(e) {
-            debug("'Later' node path not resolved - " + e.name + ':' + e.message);
+            node.debug("'Later' node path not resolved - " + e.name + ':' + e.message);
         }
         fs.readFile(path.join(laterDir, req.params.file), function (err, data) {
             if (err) {
                 /* For some reason we can't load the parser for the editor....
                 Send some dummy script for the html, basically DON'T CRASH THE EDITOR */
-                debug('Could not serve later :' + err.message);
+                node.debug('Could not serve later :' + err.message);
                 res.set('Content-Type', 'text/javascript').send(
                     'later = function() {return { get_error: "' + err.message + '"};}();');
             } else {
-                debug('Later loaded from :' + laterDir);
+                node.debug('Later loaded from :' + laterDir);
                 res.set('Content-Type', 'text/javascript').send(data);
             }
         });
     });
     //Debug output now we are loaded
-    debug("Later node loaded....");
+    node.debug("Later node loaded....");
 };
